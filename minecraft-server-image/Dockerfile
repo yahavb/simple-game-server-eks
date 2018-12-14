@@ -1,7 +1,5 @@
 FROM openjdk:8u171-jre-alpine
 
-LABEL maintainer "itzg"
-
 RUN apk add --no-cache -U \
           openssl \
           imagemagick \
@@ -15,7 +13,7 @@ RUN apk add --no-cache -U \
           mysql-client \
           python python-dev py2-pip
 
-RUN pip install mcstatus ec2-metadata
+RUN pip install mcstatus ec2-metadata boto3
 
 HEALTHCHECK CMD mcstatus localhost:$SERVER_PORT ping
 
@@ -23,8 +21,6 @@ RUN addgroup -g 1000 minecraft \
   && adduser -Ss /bin/false -u 1000 -G minecraft -h /home/minecraft minecraft \
   && mkdir -m 777 /data /mods /config /plugins \
   && chown minecraft:minecraft /data /config /mods /plugins /home/minecraft
-
-EXPOSE 25565 25575
 
 ARG RESTIFY_VER=1.1.4
 ARG RCON_CLI_VER=1.4.0
@@ -50,7 +46,6 @@ VOLUME ["/data","/mods","/config","/plugins"]
 COPY server.properties /tmp/server.properties
 WORKDIR /data
 
-#ENTRYPOINT [ "/start" ]
 
 ENV UID=1000 GID=1000 \
     JVM_XX_OPTS="-XX:+UseG1GC" MEMORY="1G" \
