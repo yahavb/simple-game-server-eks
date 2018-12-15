@@ -26,7 +26,7 @@ The proposed spec uses a [Deployment](https://github.com/yahavb/simple-game-serv
 
 We also used SQS as a mechanism to mediate between the game-server and external system that maintain the game-server fleet transient state. Any such method can read the messages published on that queue and take action. To enable SQS access on EKS, simply update your worker nodes IAM role by adding an inline policy.
 
-'''
+```
 {
     "Version": "2012-10-17",
     "Statement": [
