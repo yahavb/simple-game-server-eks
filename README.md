@@ -24,7 +24,7 @@ def get_rand_port():
 The proposed spec uses a [Deployment](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/minecraft-gs-r1-12-deploy.yaml) k8s resource type that uses standard  `containers` environment variables defining the game-server init parameters. 
 
 
-We also used SQS as a mechanism to mediate between the game-server and external system that maintain the game-server fleet transient state. Any such method can read the messages published on that queue and take action. To enable SQS access on EKS, simply update your worker nodes IAM role by adding an inline policy.
+We also used SQS as a mechanism to mediate between the game-server and external system that maintain the game-server fleet transient state. Any such method can read the messages published on that queue and take action. To enable SQS access on EKS, simply update your worker nodes IAM role by adding an inline policy with the proper `region`, `account-id`, and `queuename` defined in [start.py](https://github.com/yahavb/simple-game-server-eks/blob/master/minecraft-server-image/start.py).
 
 ```
 {
