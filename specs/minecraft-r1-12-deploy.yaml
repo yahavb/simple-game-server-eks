@@ -16,6 +16,9 @@ spec:
       labels:
         app: minecraft-r1.12
     spec:
+      nodeSelector:
+        lifecycle: spot
+        title: minecraft
       containers:
       - env:
         - name: QUEUENAME

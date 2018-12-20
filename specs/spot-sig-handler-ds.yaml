@@ -62,11 +62,17 @@ spec:
         app: spot-interrupt-handler
     spec:
       serviceAccountName: spot-interrupt-handler
+      hostNetwork: true
       containers:
       - name: spot-interrupt-handler
-        image: madhuriperi/samplek8spotinterrupt:latest
+        image: 356566070122.dkr.ecr.us-west-2.amazonaws.com/spot-sig-handler:latest
         imagePullPolicy: Always
+        command: ["/start.sh"]
         env:
+        - name: AWS_REGION
+          value: "us-west-2"
+        - name: QUEUE_URL
+          value: "https://sqs.us-west-2.amazonaws.com/356566070122/gameserver.fifo"
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -75,10 +81,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        - name: SPOT_POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
       nodeSelector:
-        lifecycle: Ec2SpotMinecraft
+        lifecycle: spot
+        title: minecraft
 
