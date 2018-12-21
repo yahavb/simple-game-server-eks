@@ -86,9 +86,9 @@ until [[ `aws cloudformation describe-stacks --stack-name "minecraft-mix-us-west
 
 * Deploy the Mincraft k8s Deployment [minecraft-r1-12-deploy.yaml](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/minecraft-r1-12-deploy.yaml) and discover public ip and port to conncet your Minecraft client by reading the init messages published by the game-server in the SQS queue. e.g.,
 
-![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/images/gs_init_msg.png)
+![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/pics/gs_init_msg.png)
 
 * Download Minecraft client e.g., https://minecraft.net/en-us/download/alternative/ configure the game server and enjoy
 
 
-![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/images/demo_game.png)
+![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/pics/demo_game.png)
