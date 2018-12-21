@@ -49,6 +49,15 @@ We used SQS as a mechanism to mediate between the game-server and external syste
 
 The EKS Bootstrap.sh script is packaged into the EKS Optimized AMI that we are using, and only requires a single input: the EKS Cluster name. The bootstrap script supports setting any kubelet-extra-args at runtime. You will need to configure node-labels so that kubernetes knows what type of nodes we have provisioned. Set the lifecycle for the nodes as `ondemand` or `spot`. Check out The Setup Process below for more information as well as [Improvements for Amazon EKS Worker Node Provisioning](https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/).
 
+### Managing Spot Nodes
+Although Spot Instance interruption is less unlikely event during a live game, its impact is perceived as a significant annoyance by players. The following section proposes strategies to avoid these negative player impact that will be applied in the referenced architecture. In the case of interruption we will drain the node and notify the game server by sending SIGTERM signal. Node drainage requires an “agent” to pull potential spot interruption from CloudWatch or Instance Metadata. We are going to use the Instance Metadata notification as the notification latency is shorter than CloudWatch. 
+* The agent,[spot-sig-handler-ds](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/spot-sig-handler-ds.yaml) is deployed as daemon set that runs on every node and will pull termination status from the instance metadata endpoint. 
+* When a termination notification arrived, the `kubectl drain node` will be executed and a SIGTERM notification will be sent to the game-server pod.
+* The game server will keep running for the next 120 sec to allow the game to notify the player about the incoming termination. 
+* No new game-server will be scheduled on that node to be terminated as it marked as schedulable.
+* A notification to external system like Match-Making system, the SQS queue in our case, will be sent to update the current available game-server inventory.
+
+
 
 ## The Setup Process
 * Create an EKS cluster using the [Getting Started with Amazon EKS](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html) guide. The guestbook step is recommended for sanity test but not crucial to this scenario. 
