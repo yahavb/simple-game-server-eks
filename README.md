@@ -3,6 +3,9 @@
 This is an example of a dedicated game-server deployment in EKS using Spot Amazon EC2 Instances. The goal is to provide a robust and straightforward game-server deployment pattern on EKS. 
 
 We use Minecraft as the example deployed based on [minecraft helm chart](https://hub.docker.com/r/itzg/minecraft-server/) with a slight modification in the deployment mechanism.
+Launching game-server in EKS can be done in several ways. The first is using k8s native constructs such as Deployment with customized wrappers e.g., [start.py](https://github.com/yahavb/simple-game-server-eks/blob/master/minecraft-server-image/start.py). Also, it can use [Init Containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) that decouples the function that contains utilities or setup scripts not present in the game-server image. Finally, a dedicated game-server CRD that points k8s to use specific init containers per game-server type. We are going to cover the three cases herein. 
+
+## Game Server Common Functions and Utilities 
 
 ### Dynamic Port Allocation
 The proposal herein deploys a dedicated game server as a k8s pod with `hostnetwork:true` option. Each k8s node (EC2 Instance) deployed with a public hostname, and high port range is opened for client connectivity. Upon a game-server scheduling (pod scheduling), two high ports are allocated for the game server. The clients will connect the game-server using the public hostname and port assigned. [start.py](https://github.com/yahavb/simple-game-server-eks/blob/master/minecraft-server-image/start.py) act the game-server wrapper script for the original build. It uses a lazy-approach to generate the required set of dynamic high ports and passes it game-server as an environment variable upon the game-server init phase.  Initially, `socket.AF_INET` socket is started and bound to port `0`. The OS will allocate a socket on a high port. We will capture the port and release the socket right before we the server starts. There is a chance for a raise condition when multiple game-server will attempt to start on the same instance. That will resolve automatically by a continuous `CrashLoopBackOff`.  
@@ -20,7 +23,6 @@ def get_rand_port():
     s.close()
        return port
 ```
-
 
 The proposed spec uses a [Deployment](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/minecraft-gs-r1-12-deploy.yaml) k8s resource type that uses standard  `containers` environment variables defining the game-server init parameters. 
 
