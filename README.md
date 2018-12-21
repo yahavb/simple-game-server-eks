@@ -76,3 +76,6 @@ until [[ `aws cloudformation describe-stacks --stack-name "minecraft-mix-us-west
 ![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/images/gs_init_msg.png)
 
 * Download Minecraft client e.g., https://minecraft.net/en-us/download/alternative/ configure the game server and enjoy
+
+
+![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/images/demo_game.png)
