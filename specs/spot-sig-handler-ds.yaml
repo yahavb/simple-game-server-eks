@@ -69,7 +69,7 @@ spec:
         imagePullPolicy: Always
         command: ["/start.sh"]
         env:
-        - name: AWS_REGION
+        - name: AWS_DEFAULT_REGION
           value: "us-west-2"
         - name: QUEUE_URL
           value: "https://sqs.us-west-2.amazonaws.com/356566070122/gameserver.fifo"

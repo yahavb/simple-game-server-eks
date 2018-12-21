@@ -1,9 +1,7 @@
 #!/bin/sh
 
 echo "Starting the spot int handler"
-MESSAGE="Test"
-MESSAGE_GRP_ID="gsGrp_us-west-2"
-aws sqs send-message --queue-url ${QUEUE_URL} --message-body ${MESSAGE} --message-group-id ${MESSAGE_GRP_ID}
+
 
 if [ "${QUEUE_URL}" == "" ]; then
   echo '[ERROR] Environment variable `QUEUE_URL` has no value set.' 1>&2
@@ -37,6 +35,7 @@ echo INSTANCE_ID=${INSTANCE_ID}
 
 echo "\`kubectl drain ${NODE_NAME}\` will be executed once a termination notice is made."
 
+
 POLL_INTERVAL=${POLL_INTERVAL:-5}
 NOTICE_URL=${NOTICE_URL:-http://169.254.169.254/latest/meta-data/spot/termination-time}
 
@@ -48,8 +47,10 @@ while http_status=$(curl -o /dev/null -w '%{http_code}' -sL ${NOTICE_URL}); [ ${
 done
 
 echo $(date): ${http_status}
-MESSAGE="Spot Termination: ${NODE_NAME}, Instance: ${INSTANCE_ID}"
-aws sqs send-message --queue-url ${QUEUE_URL} --message-body ${MESSAGE} --message-group-id ${MESSAGE_GRP_ID}
+
+MESSAGE="[{'status': 'spot termination', 'public_hostname': ${NODE_NAME}, 'public_port': NA, 'region': 'us-west'}]"
+MESSAGE_GRP_ID="gsGrp_us-west-2"
+aws sqs send-message --queue-url ${QUEUE_URL} --message-body "${MESSAGE}" --message-group-id ${MESSAGE_GRP_ID}
 
 echo "Drain the node."
 kubectl drain ${NODE_NAME} --force --ignore-daemonsets
