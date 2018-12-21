@@ -1,6 +1,6 @@
 # simple-game-server-eks
 
-This is an example of a dedicated game-server deployment in EKS. The goal is to provide a robust and straightforward game-server deployment pattern on k8s. 
+This is an example of a dedicated game-server deployment in EKS using Spot Amazon EC2 Instances. The goal is to provide a robust and straightforward game-server deployment pattern on EKS. 
 
 We use Minecraft as the example deployed based on [minecraft helm chart](https://hub.docker.com/r/itzg/minecraft-server/) with a slight modification in the deployment mechanism.
 
@@ -45,7 +45,7 @@ We also used SQS as a mechanism to mediate between the game-server and external 
 }
 ```
 
-The EKS Bootstrap.sh script is packaged into the EKS Optimized AMI that we are using, and only requires a single input: the EKS Cluster name. The bootstrap script supports setting any kubelet-extra-args at runtime. You will need to configure node-labels so that kubernetes knows what type of nodes we have provisioned. Set the lifecycle for the nodes as `OnDemandMicecraft` or `Ec2SpotMinecraft`. Check out The Setup Process below for more information as well as [Improvements for Amazon EKS Worker Node Provisioning](https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/).
+The EKS Bootstrap.sh script is packaged into the EKS Optimized AMI that we are using, and only requires a single input: the EKS Cluster name. The bootstrap script supports setting any kubelet-extra-args at runtime. You will need to configure node-labels so that kubernetes knows what type of nodes we have provisioned. Set the lifecycle for the nodes as `ondemand` or `spot`. Check out The Setup Process below for more information as well as [Improvements for Amazon EKS Worker Node Provisioning](https://aws.amazon.com/blogs/opensource/improvements-eks-worker-node-provisioning/).
 
 
 ## The Setup Process
@@ -53,18 +53,6 @@ The EKS Bootstrap.sh script is packaged into the EKS Optimized AMI that we are u
 * If an AWS Spot Instances is being used, apply [Step 3: Launch and Configure Amazon EKS Worker Nodes](https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html) from the guide but with Spot ASG. 
 * One can use MixedInstancesPolicy where we allow EKS to opportunistically allocate compatibale spot instances for cost optimization.
 For that, one should use the cloud formation template with the following parameters:
-
-stackname minecraft-mix-us-west2
-
-clustername use the value you created in previous step
-
-ClusterControlPlaneSecurityGroup use the value you created in previous step
-
-NodeGroupName follow the name pattern from previous step
-
-NodeImageId ami-07af9511082779ae7 taken from https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html
-
-BootstrapArguments --kubelet-extra-args --node-labels=lifecycle=ondemand,title=minecraft,region=uswest2
 
 In our case, the Minecraft gameserver or any other gameserver exposed to the player thru ephemeral port allocated by [start.py](https://github.com/yahavb/simple-game-server-eks/blob/master/minecraft-server-image/start.py). Hence `ExistingNodeSecurityGroups` should be populated with the security group that allows the network access.  
 
@@ -74,5 +62,14 @@ check the status of the node pool create cloudformation be executing:
 until [[ `aws cloudformation describe-stacks --stack-name "minecraft-mix-us-west2" --query "Stacks[0].[StackStatus]" --output text` == "CREATE_COMPLETE" ]]; do  echo "The stack is NOT in a state of CREATE_COMPLETE at `date`";   sleep 30; done && echo "The Stack is built at `date` - Please proceed"
 ```
 
-** Add the new Worker Node Role ARN to the ConfigMap
-discover the new node role ARN using IAM console. 
+* Add the new Worker Node Role ARN to the ConfigMap by discovering the new node role ARN using IAM console and execute [whitelist-worker-nodes.yaml](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/whitelist-worker-nodes.yaml)
+* Deploy the Spot signal handler as daemon set using (spot-sig-handler-ds.yaml)[https://github.com/yahavb/simple-game-server-eks/blob/master/specs/spot-sig-handler-ds.yaml]
+* Based on the node lables configured in the worker nodes provisioning set the `nodeSelector` with the proper `lifecycle` and `title` values. In out case:
+``` yaml
+      nodeSelector:
+        lifecycle: spot
+        title: minecraft
+```
+
+* Deploy the Mincraft k8s Deployment [minecraft-r1-12-deploy.yaml](https://github.com/yahavb/simple-game-server-eks/blob/master/specs/minecraft-r1-12-deploy.yaml) and discover public ip and port to conncet your Minecraft client by reading the init messages published by the game-server in the SQS queue. e.g., 
+![alt text](https://github.com/yahavb/simple-game-server-eks/blob/master/images/gs_init_msg.png)
